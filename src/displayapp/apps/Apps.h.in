@@ -28,6 +28,7 @@ namespace Pinetime {
       Motion,
       Steps,
       Dice,
+      MyApp,
       Weather,
       PassKey,
       QuickSettings,
