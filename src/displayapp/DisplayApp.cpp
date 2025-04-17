@@ -83,7 +83,8 @@ DisplayApp::DisplayApp(Drivers::St7789& lcd,
                        Pinetime::Controllers::BrightnessController& brightnessController,
                        Pinetime::Controllers::TouchHandler& touchHandler,
                        Pinetime::Controllers::FS& filesystem,
-                       Pinetime::Drivers::SpiNorFlash& spiNorFlash)
+                       Pinetime::Drivers::SpiNorFlash& spiNorFlash,
+                       Pinetime::Controllers::HttpService& httpService)
   : lcd {lcd},
     touchPanel {touchPanel},
     batteryController {batteryController},
@@ -100,6 +101,7 @@ DisplayApp::DisplayApp(Drivers::St7789& lcd,
     touchHandler {touchHandler},
     filesystem {filesystem},
     spiNorFlash {spiNorFlash},
+    httpService {httpService},
     lvgl {lcd, filesystem},
     timer(this, TimerCallback),
     controllers {batteryController,
@@ -119,7 +121,8 @@ DisplayApp::DisplayApp(Drivers::St7789& lcd,
                  this,
                  lvgl,
                  nullptr,
-                 nullptr} {
+                 nullptr,
+                 httpService} {
 }
 
 void DisplayApp::Start(System::BootErrors error) {

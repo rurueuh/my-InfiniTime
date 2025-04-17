@@ -6,50 +6,51 @@
 #undef min
 #include <cstdint>
 #include <array>
+#include <cstring>
 
 namespace Pinetime {
   namespace Controllers {
     class NimbleController;
 
+    struct HttpRequest {
+      uint8_t method;
+      uint8_t urlLength;
+      char url[256];
+      uint16_t bodyLength;
+      uint8_t body[1024];
+    };
+
+    struct HttpResponse {
+      uint16_t statusCode;
+      uint16_t headersLength;
+      char headers[512];
+      uint16_t bodyLength;
+      char body[2048];
+    };
+
     class HttpService {
     public:
-      HttpService(NimbleController& nimble);
+      HttpService();
       void Init();
       int OnHttpRequested(uint16_t attributeHandle, ble_gatt_access_ctxt* context);
       void NotifyHttpResponse(uint16_t connectionHandle, const uint8_t* data, size_t length);
 
-      static constexpr uint16_t httpServiceId {0xFEED};
-      static constexpr ble_uuid16_t httpServiceUuid {.u {.type = BLE_UUID_TYPE_16}, .value = httpServiceId};
+      static constexpr ble_uuid128_t httpServiceUuid {
+        .u {.type = BLE_UUID_TYPE_128},
+        .value = {0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80, 0x00, 0x10, 0x00, 0x00, 0xee, 0x00, 0x00, 0x00}};
 
-    private:
-      NimbleController& nimble;
-      static constexpr uint16_t httpRequestId {0x0001};
-      static constexpr ble_uuid16_t httpRequestUuid {.u {.type = BLE_UUID_TYPE_16}, .value = httpRequestId};
-
-      struct ble_gatt_chr_def characteristicDefinition[2];
-      struct ble_gatt_svc_def serviceDefinition[2];
+      static constexpr ble_uuid128_t httpRequestUuid {
+        .u {.type = BLE_UUID_TYPE_128},
+        .value = {0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80, 0x00, 0x10, 0x00, 0x00, 0xee, 0x01, 0x00, 0x00}};
 
       uint16_t httpRequestHandle;
 
-      // Structure pour le protocole de communication
-      struct HttpRequest {
-        uint8_t method; // 0=GET, 1=POST, 2=PUT, 3=DELETE
-        uint8_t urlLength;
-        char url[256];
-        uint16_t bodyLength;
-        uint8_t body[512];
-      };
-
-      struct HttpResponse {
-        uint16_t statusCode;
-        uint16_t headersLength;
-        char headers[512];
-        uint16_t bodyLength;
-        uint8_t body[1024];
-      };
+      ble_gatt_chr_def characteristicDefinition[2];
+      ble_gatt_svc_def serviceDefinition[2];
 
       void ProcessHttpRequest(const HttpRequest& request);
       void SendHttpResponse(uint16_t connectionHandle, const HttpResponse& response);
+    private:
     };
   }
 } 

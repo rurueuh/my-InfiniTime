@@ -1,5 +1,4 @@
 #include "components/ble/HttpService.h"
-#include "components/ble/NimbleController.h"
 #include <nrf_log.h>
 
 using namespace Pinetime::Controllers;
@@ -11,8 +10,7 @@ namespace {
   }
 }
 
-HttpService::HttpService(NimbleController& nimble)
-  : nimble {nimble},
+HttpService::HttpService() :
     characteristicDefinition {{.uuid = &httpRequestUuid.u,
                                .access_cb = HttpServiceCallback,
                                .arg = this,
@@ -82,6 +80,7 @@ int HttpService::OnHttpRequested(uint16_t attributeHandle, ble_gatt_access_ctxt*
 void HttpService::ProcessHttpRequest(const HttpRequest& request) {
   // TODO: Implement actual HTTP request through GadgetBridge
   // For now, return a dummy response
+  (void)request;
   
   HttpResponse response;
   response.statusCode = 200;
