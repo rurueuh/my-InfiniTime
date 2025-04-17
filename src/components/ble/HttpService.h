@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <array>
 #include <cstring>
+#include <functional>
 
 namespace Pinetime {
   namespace Controllers {
@@ -50,7 +51,9 @@ namespace Pinetime {
 
       void ProcessHttpRequest(const HttpRequest& request);
       void SendHttpResponse(uint16_t connectionHandle, const HttpResponse& response);
+      void SetResponseCallback(std::function<void(const HttpResponse&)> callback);
     private:
+      std::function<void(const HttpResponse&)> responseCallback;
     };
   }
 } 

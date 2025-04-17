@@ -25,6 +25,17 @@ MyApp::MyApp(Pinetime::Controllers::HttpService& httpService) : httpService(http
   });
   
   btn->user_data = this;
+
+  // Create response label
+  responseLabel = lv_label_create(lv_scr_act(), nullptr);
+  lv_label_set_text_static(responseLabel, "Response will appear here");
+  lv_label_set_align(responseLabel, LV_LABEL_ALIGN_CENTER);
+  lv_obj_align(responseLabel, lv_scr_act(), LV_ALIGN_CENTER, 0, 60);
+
+  // Set up HTTP response callback
+  httpService.SetResponseCallback([this](const Pinetime::Controllers::HttpResponse& response) {
+    HandleHttpResponse(response);
+  });
 }
 
 void MyApp::MakeHttpRequest() {
@@ -39,6 +50,21 @@ void MyApp::MakeHttpRequest() {
   
   // Process the request
   httpService.ProcessHttpRequest(request);
+}
+
+void MyApp::HandleHttpResponse(const Pinetime::Controllers::HttpResponse& response) {
+  // Create a buffer to store the response text
+  char responseText[256];
+  
+  // Format the response
+  snprintf(responseText, sizeof(responseText), 
+           "Status: %d\nBody: %.*s", 
+           response.statusCode,
+           response.bodyLength,
+           response.body);
+  
+  // Update the label with the response
+  lv_label_set_text(responseLabel, responseText);
 }
 
 void MyApp::Refresh() {

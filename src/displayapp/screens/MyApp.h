@@ -17,7 +17,9 @@ namespace Pinetime {
 
       private:
         Pinetime::Controllers::HttpService& httpService;
+        lv_obj_t* responseLabel;
         void MakeHttpRequest();
+        void HandleHttpResponse(const Pinetime::Controllers::HttpResponse& response);
       };
     }
 

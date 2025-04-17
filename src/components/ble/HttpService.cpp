@@ -126,6 +126,11 @@ void HttpService::SendHttpResponse(uint16_t connectionHandle, const HttpResponse
   
   // Send notification
   NotifyHttpResponse(connectionHandle, buffer, offset);
+
+  // Call the callback if set
+  if (responseCallback) {
+    responseCallback(response);
+  }
 }
 
 void HttpService::NotifyHttpResponse(uint16_t connectionHandle, const uint8_t* data, size_t length) {
@@ -133,4 +138,8 @@ void HttpService::NotifyHttpResponse(uint16_t connectionHandle, const uint8_t* d
   if (om != nullptr) {
     ble_gattc_notify_custom(connectionHandle, httpRequestHandle, om);
   }
+}
+
+void HttpService::SetResponseCallback(std::function<void(const HttpResponse&)> callback) {
+  responseCallback = callback;
 } 
