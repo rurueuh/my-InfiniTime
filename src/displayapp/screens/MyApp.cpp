@@ -31,7 +31,7 @@ MyApp::MyApp(Pinetime::Controllers::HttpService& httpService) : httpService(http
   lv_obj_set_size(responseContainer, LV_HOR_RES - 20, 100);
   lv_obj_align(responseContainer, lv_scr_act(), LV_ALIGN_CENTER, 0, 60);
   lv_cont_set_fit(responseContainer, LV_FIT_TIGHT);
-  lv_cont_set_layout(responseContainer, LV_LAYOUT_COL_M);
+  lv_cont_set_layout(responseContainer, LV_LAYOUT_OFF);
 
   // Create response label inside the container
   responseLabel = lv_label_create(responseContainer, nullptr);
