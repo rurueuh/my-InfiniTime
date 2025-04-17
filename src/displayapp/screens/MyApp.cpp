@@ -26,11 +26,20 @@ MyApp::MyApp(Pinetime::Controllers::HttpService& httpService) : httpService(http
   
   btn->user_data = this;
 
-  // Create response label
-  responseLabel = lv_label_create(lv_scr_act(), nullptr);
+  // Create a container for the response
+  lv_obj_t* responseContainer = lv_cont_create(lv_scr_act(), nullptr);
+  lv_obj_set_size(responseContainer, LV_HOR_RES - 20, 100);
+  lv_obj_align(responseContainer, lv_scr_act(), LV_ALIGN_CENTER, 0, 60);
+  lv_cont_set_fit(responseContainer, LV_FIT_TIGHT);
+  lv_cont_set_layout(responseContainer, LV_LAYOUT_COL_M);
+
+  // Create response label inside the container
+  responseLabel = lv_label_create(responseContainer, nullptr);
   lv_label_set_text_static(responseLabel, "Response will appear here");
   lv_label_set_align(responseLabel, LV_LABEL_ALIGN_CENTER);
-  lv_obj_align(responseLabel, lv_scr_act(), LV_ALIGN_CENTER, 0, 60);
+  lv_label_set_long_mode(responseLabel, LV_LABEL_LONG_BREAK);
+  lv_obj_set_width(responseLabel, LV_HOR_RES - 30);
+  lv_obj_set_style_local_text_color(responseLabel, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_WHITE);
 
   // Set up HTTP response callback
   httpService.SetResponseCallback([this](const Pinetime::Controllers::HttpResponse& response) {
@@ -56,11 +65,12 @@ void MyApp::HandleHttpResponse(const Pinetime::Controllers::HttpResponse& respon
   // Create a buffer to store the response text
   char responseText[256];
   
-  // Format the response
+  // Format the response with a maximum length
+  int maxBodyLength = std::min(response.bodyLength, static_cast<uint16_t>(100));
   snprintf(responseText, sizeof(responseText), 
            "Status: %d\nBody: %.*s", 
            response.statusCode,
-           response.bodyLength,
+           maxBodyLength,
            response.body);
   
   // Update the label with the response
