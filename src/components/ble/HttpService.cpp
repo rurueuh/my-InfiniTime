@@ -42,13 +42,20 @@ int HttpService::OnHttpRequested(uint16_t attributeHandle, ble_gatt_access_ctxt*
     uint16_t length = context->om->om_len;
     
     if (length < 3) { // Minimum size for method + urlLength
+      NRF_LOG_ERROR("Invalid request length");
       return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
     }
     
     request.method = data[0];
     request.urlLength = data[1];
     
+    if (request.urlLength >= (int) sizeof(request.url)) {
+      NRF_LOG_ERROR("URL too long");
+      return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
+    }
+    
     if (length < 3 + request.urlLength) {
+      NRF_LOG_ERROR("Invalid request length for URL");
       return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
     }
     
@@ -58,7 +65,10 @@ int HttpService::OnHttpRequested(uint16_t attributeHandle, ble_gatt_access_ctxt*
     // Parse body if present
     if (length > 3 + request.urlLength) {
       request.bodyLength = (data[2 + request.urlLength] << 8) | data[3 + request.urlLength];
-      if (length >= 5 + request.urlLength + request.bodyLength) {
+      if (request.bodyLength >=  (int)  sizeof(request.body)) {
+        NRF_LOG_ERROR("Body too long");
+        request.bodyLength = 0;
+      } else if (length >= 5 + request.urlLength + request.bodyLength) {
         memcpy(request.body, &data[4 + request.urlLength], request.bodyLength);
       } else {
         request.bodyLength = 0;
@@ -78,8 +88,7 @@ int HttpService::OnHttpRequested(uint16_t attributeHandle, ble_gatt_access_ctxt*
 }
 
 void HttpService::ProcessHttpRequest(const HttpRequest& request) {
-  // TODO: Implement actual HTTP request through GadgetBridge
-  // For now, return a dummy response
+  NRF_LOG_INFO("Processing HTTP request");
   (void)request;
   
   HttpResponse response;
@@ -88,18 +97,30 @@ void HttpService::ProcessHttpRequest(const HttpRequest& request) {
   // Set headers
   const char* headers = "Content-Type: text/plain\r\n";
   response.headersLength = strlen(headers);
-  memcpy(response.headers, headers, response.headersLength);
+  if (response.headersLength >= (int)  sizeof(response.headers)) {
+    NRF_LOG_ERROR("Headers too long");
+    response.headersLength = 0;
+  } else {
+    memcpy(response.headers, headers, response.headersLength);
+  }
   
   // Set body
-  const char* body = "Hello from PineTime!";
+  const char* body = "Hello from ruru!";
   response.bodyLength = strlen(body);
-  memcpy(response.body, body, response.bodyLength);
+  if (response.bodyLength >= (int)  sizeof(response.body)) {
+    NRF_LOG_ERROR("Body too long");
+    response.bodyLength = 0;
+  } else {
+    memcpy(response.body, body, response.bodyLength);
+  }
   
   // Send response
   SendHttpResponse(0, response); // TODO: Get actual connection handle
 }
 
 void HttpService::SendHttpResponse(uint16_t connectionHandle, const HttpResponse& response) {
+  NRF_LOG_INFO("Sending HTTP response");
+  
   // Create response buffer
   uint8_t buffer[2048];
   size_t offset = 0;
@@ -113,30 +134,39 @@ void HttpService::SendHttpResponse(uint16_t connectionHandle, const HttpResponse
   buffer[offset++] = response.headersLength & 0xFF;
   
   // Add headers
-  memcpy(&buffer[offset], response.headers, response.headersLength);
-  offset += response.headersLength;
+  if (response.headersLength > 0) {
+    memcpy(&buffer[offset], response.headers, response.headersLength);
+    offset += response.headersLength;
+  }
   
   // Add body length
   buffer[offset++] = (response.bodyLength >> 8) & 0xFF;
   buffer[offset++] = response.bodyLength & 0xFF;
   
   // Add body
-  memcpy(&buffer[offset], response.body, response.bodyLength);
-  offset += response.bodyLength;
+  if (response.bodyLength > 0) {
+    memcpy(&buffer[offset], response.body, response.bodyLength);
+    offset += response.bodyLength;
+  }
   
   // Send notification
   NotifyHttpResponse(connectionHandle, buffer, offset);
 
   // Call the callback if set
   if (responseCallback) {
+    NRF_LOG_INFO("Calling response callback");
     responseCallback(response);
   }
 }
 
 void HttpService::NotifyHttpResponse(uint16_t connectionHandle, const uint8_t* data, size_t length) {
+  NRF_LOG_INFO("Notifying HTTP response");
+  
   auto* om = ble_hs_mbuf_from_flat(data, length);
   if (om != nullptr) {
     ble_gattc_notify_custom(connectionHandle, httpRequestHandle, om);
+  } else {
+    NRF_LOG_ERROR("Failed to create mbuf for response");
   }
 }
 

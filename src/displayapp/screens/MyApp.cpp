@@ -44,11 +44,17 @@ MyApp::MyApp(Pinetime::Controllers::HttpService& httpService) : httpService(http
 }
 
 void MyApp::MakeHttpRequest() {
+  NRF_LOG_INFO("Making HTTP request");
+  
   // Create a simple GET request
   Pinetime::Controllers::HttpRequest request;
   request.method = 0; // GET method
   const char* url = "http://panel.armeenapoleon.rurueuh.fr/";
   request.urlLength = strlen(url);
+  if (request.urlLength >=  (int) sizeof(request.url)) {
+    NRF_LOG_ERROR("URL too long");
+    return;
+  }
   memcpy(request.url, url, request.urlLength);
   request.url[request.urlLength] = '\0';
   request.bodyLength = 0;
@@ -58,19 +64,27 @@ void MyApp::MakeHttpRequest() {
 }
 
 void MyApp::HandleHttpResponse(const Pinetime::Controllers::HttpResponse& response) {
+  NRF_LOG_INFO("Received HTTP response with status: %d", response.statusCode);
+  
   // Create a buffer to store the response text
   char responseText[256];
   
   // Format the response with a maximum length
   int maxBodyLength = std::min(response.bodyLength, static_cast<uint16_t>(100));
-  snprintf(responseText, sizeof(responseText), 
-           "Status: %d\nBody: %.*s", 
-           response.statusCode,
-           maxBodyLength,
-           response.body);
+  int written = snprintf(responseText, sizeof(responseText), 
+                        "Status: %d\nBody: %.*s", 
+                        response.statusCode,
+                        maxBodyLength,
+                        response.body);
+                        
+  if (written < 0 || written >=  (int) sizeof(responseText)) {
+    NRF_LOG_ERROR("Failed to format response text");
+    return;
+  }
   
   // Update the label with the response
   lv_label_set_text(responseLabel, responseText);
+  NRF_LOG_INFO("Updated response label");
 }
 
 void MyApp::Refresh() {
